@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import requests
 from weaviate.util import generate_uuid5
+
 # from weaviate_provider.hooks.weaviate import WeaviateHook
 from weaviate_provider.operators.weaviate import (
     WeaviateCheckSchemaOperator,
@@ -104,7 +105,8 @@ def in_alpha_vantage():
 
         if USE_PRE_EMBEDDED_DATA:
             print("Using pre-vectorized data from parquet file.")
-            df = pd.read_parquet("include/pre_computed_embeddings/embeddings.parquet")
+            df = pd.read_parquet("include/pre_computed_embeddings/pre_embedded.parquet")
+            print(df)
         else:
             df = pd.concat([news_df], ignore_index=True)
 
@@ -123,9 +125,9 @@ def in_alpha_vantage():
 
             model.eval()
 
-            def get_embeddings(texts):
+            def get_embeddings(text):
                 tokens = tokenizer(
-                    texts.tolist(),
+                    [text],
                     return_tensors="pt",
                     truncation=True,
                     padding=True,
@@ -138,19 +140,7 @@ def in_alpha_vantage():
                     embeddings = mean_tensor.numpy()
                 return embeddings
 
-            batch_size = 16
-            embeddings = []
-            for i in range(0, len(df), batch_size):
-                print(f"Processing batch {i} to {i+batch_size}")
-                batch_embeddings = get_embeddings(
-                    df["text_info"].iloc[i : i + batch_size]
-                )
-                embeddings.extend(batch_embeddings)
-
-            df["vector"] = embeddings
-
-            print(f"Passing {len(df)} objects for import.")
-            df.to_parquet(f"include/embeddings/embeddings_{df['uuid']}.parquet")
+            df["vector"] = [get_embeddings(df["text_info"].iloc[0])]
 
         return {
             "data": df,

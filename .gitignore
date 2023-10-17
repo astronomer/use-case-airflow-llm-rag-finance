@@ -4,3 +4,4 @@
 **/.airflowignore
 include/embeddings
 include/postgres
+__pycache__
