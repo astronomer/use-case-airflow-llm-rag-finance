@@ -1,0 +1,79 @@
+{
+    "classes": [
+        {
+            "class": "NEWS",
+            "description": "News headlines and news summaries",
+            "vectorizer": "text2vec-openai",
+            "moduleConfig": {
+            },
+            "properties": [
+                {
+                    "name": "url",
+                    "description": "URL of the news article",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "True",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                },
+                {
+                    "name": "title",
+                    "description": "Title of the news article",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "False",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                },
+                {
+                    "name": "summary",
+                    "description": "Summary of the news article",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "False",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                },
+                {
+                    "name": "source",
+                    "description": "Source publication of the news article",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "True",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                },
+                {
+                    "name": "source_domain",
+                    "description": "Source publication domain of the news article",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "True",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                },
+                {
+                    "name": "time_published",
+                    "description": "Publication time",
+                    "dataType": ["text"],
+                    "moduleConfig": {
+                        "text2vec-openai": {
+                            "skip": "True",
+                            "vectorizePropertyName": "False"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

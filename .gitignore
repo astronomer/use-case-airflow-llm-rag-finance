@@ -1,1 +1,6 @@
+.astro
 .env
+.git
+**/.airflowignore
+include/embeddings
+include/postgres

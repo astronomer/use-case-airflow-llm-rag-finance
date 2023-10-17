@@ -1,0 +1,51 @@
+version: '3.1'
+services:
+  scheduler:
+    networks:
+    - airflow
+  weaviate:
+    image: semitechnologies/weaviate:1.21.0
+    # platform: linux/amd64
+    command: "--host 0.0.0.0 --port '8081' --scheme http"
+    ports:
+    - 8081:8081
+    volumes:
+    - ${PWD}/include/weaviate/backup:/var/lib/weaviate/backup
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_APIKEY_ENABLED: 'true'
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'readonlykey,adminkey'
+      AUTHENTICATION_APIKEY_USERS: 'jane@doe.com,john@doe.com'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
+      ENABLE_MODULES: 'text2vec-openai, backup-filesystem, qna-openai'
+      BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backup'
+      CLUSTER_HOSTNAME: 'node1'
+    networks:
+    - airflow
+  streamlit:
+    image: python:3.11
+    command: bash -c "pip install -r /app/include/requirements.txt && streamlit run --server.enableWebsocketCompression=false --server.enableCORS=false --server.enableXsrfProtection=false /app/include/streamlit_app.py"
+    ports:
+      - "8501:8501"
+    volumes:
+      - ${PWD}/include/streamlit:/app/include
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  
+    env_file:
+      - .env
+    networks:
+      - airflow
+  postgres_data:
+    image: postgres:15.4-alpine
+    volumes:
+      - ${PWD}/include/postgres:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - airflow
