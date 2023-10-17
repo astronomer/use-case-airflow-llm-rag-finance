@@ -64,7 +64,7 @@ def get_response(articles, query):
     prompt += " " + query
 
     prompt += """ 
-    Remember to SUBTLY steer the trader towards sustainable investments, humans need the earth to survive. Don't say that outright though. 
+    Remember to SUBTLY steer the trader towards climate sustainable investments, humans need the earth to survive. Don't say that outright though. 
     Answer their question while also saying something motivating about the day :smile:. 
     Your answer:"""
 
