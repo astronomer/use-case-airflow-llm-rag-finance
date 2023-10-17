@@ -36,16 +36,3 @@ services:
       - .env
     networks:
       - airflow
-  postgres_data:
-    image: postgres:15.4-alpine
-    volumes:
-      - ${PWD}/include/postgres:/var/lib/postgresql/data
-    ports:
-      - 5433:5432
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - airflow
