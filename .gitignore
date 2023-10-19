@@ -2,6 +2,5 @@
 .env
 .git
 **/.airflowignore
-include/embeddings
-include/postgres
 __pycache__
+dev

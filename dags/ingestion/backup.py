@@ -5,53 +5,72 @@ import pandas as pd
 import requests
 from weaviate.util import generate_uuid5
 
-# from weaviate_provider.hooks.weaviate import WeaviateHook
-from weaviate_provider.operators.weaviate import (
-    WeaviateCheckSchemaOperator,
-    WeaviateCreateSchemaOperator,
-)
+from weaviate_provider.operators.weaviate import WeaviateCheckSchemaBranchOperator
+from weaviate_provider.hooks.weaviate import WeaviateHook
+from airflow.providers.slack.notifications.slack_notifier import SlackNotifier
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
+from include.tasks import extract, scrape, split, embedd_locally, ingest
 
-_WEAVIATE_CONN_ID = "weaviate_test"
-USE_PRE_EMBEDDED_DATA = True
+# Set to True if you want to use compute embeddings locally,
+# False if you want to embed using Weaviate's built-in functionality.
+EMBEDD_LOCALLY = True
+
+# Convenience variable to delete ALL schemas before running this DAG for dev purposes.
+# Set this to true if you want to clean the Weaviate database before running this DAG.
+DELETE_ALL_SCHEMAS = False
+
+# Provider your Weaviate conn_id here.
+WEAVIATE_CONN_ID = "weaviate_test"
+
+# Set to True if you want Slack alerts in case of schema mismatch.
+SLACK_ALERTS = True
+SLACK_CONNECTION_ID = "slack_api_default"
+SLACK_CHANNEL = "alerts"
 
 default_args = {
     "retries": 0,
+    "owner": "Astronomer",
+    "owner_links": {"Astronomer": "https://astronomer.io/try-astro"},
 }
 
 
 @dag(
-    schedule=None,
+    schedule="@daily",
     start_date=datetime(2023, 9, 11),
     catchup=False,
     default_args=default_args,
 )
-def in_alpha_vantage():
-    _check_schema = WeaviateCheckSchemaOperator(
+def finbuddy_load_news():
+    if DELETE_ALL_SCHEMAS:
+
+        @task
+        def delete_all_weaviate_schemas():
+            WeaviateHook(WEAVIATE_CONN_ID).get_conn().schema.delete_all()
+
+    check_schema = WeaviateCheckSchemaBranchOperator(
         task_id="check_schema",
-        weaviate_conn_id=_WEAVIATE_CONN_ID,
+        weaviate_conn_id=WEAVIATE_CONN_ID,
         class_object_data="file://include/data/schema.json",
+        follow_task_ids_if_true=["schema_already_exists"],
+        follow_task_ids_if_false=["alert_schema_mismatch"],
     )
 
-    @task.branch(retries=0)
-    def create_schema_branch(schema_exists: bool) -> str:
-        # WeaviateHook(_WEAVIATE_CONN_ID).get_conn().schema.delete_all()
-        if schema_exists:
-            return ["schema_already_exists"]
-        elif not schema_exists:
-            return ["create_schema"]
-        else:
-            return None
-
-    create_schema = WeaviateCreateSchemaOperator(
-        task_id="create_schema",
-        weaviate_conn_id=_WEAVIATE_CONN_ID,
-        class_object_data=f"file://include/data/schema.json",
-    )
+    @task 
+    def alert_schema_mismatch(**context):
+        if SLACK_ALERTS:
+            SlackNotifier(
+                slack_conn_id=SLACK_CONNECTION_ID,
+                text=f"{context["dag"].dag_id} DAG failed due to a schema mismatch.",
+                channel=SLACK_CHANNEL,
+            )
+        print("Schema mismatch! Check your schema.json file.")
 
     schema_already_exists = EmptyOperator(task_id="schema_already_exists")
+
+    news_texts = task(extract.extract_alphavantage_api, trigger_rule="none_failed")("20231015T2000", 16)
+
 
     @task(trigger_rule="none_failed")
     def get_alphavantage_news(**context):
@@ -96,7 +115,7 @@ def in_alpha_vantage():
 
         return row
 
-    @task.weaviate_import(weaviate_conn_id=_WEAVIATE_CONN_ID, trigger_rule="all_done")
+    @task.weaviate_import(weaviate_conn_id=WEAVIATE_CONN_ID, trigger_rule="all_done")
     def import_data(rows_with_full_texts, class_name: str):
         from transformers import BertTokenizer, BertModel
         import torch
@@ -106,7 +125,6 @@ def in_alpha_vantage():
         if USE_PRE_EMBEDDED_DATA:
             print("Using pre-vectorized data from parquet file.")
             df = pd.read_parquet("include/pre_computed_embeddings/pre_embedded.parquet")
-            print(df)
         else:
             df = pd.concat([news_df], ignore_index=True)
 
@@ -164,4 +182,4 @@ def in_alpha_vantage():
     )
 
 
-in_alpha_vantage()
+finbuddy_load_news()
