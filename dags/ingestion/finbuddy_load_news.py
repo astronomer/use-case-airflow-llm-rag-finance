@@ -1,5 +1,28 @@
+"""
+## Retrieve news articles, create embeddings and ingest them into Weaviate
+
+This DAG retrieves news article urls from the Alpha Vantage and Spaceflight News APIs,
+scrapes the articles, creates chunks and ingests them into Weaviate with the option
+to compute the embeddings locally or using Weaviate's built-in functionality.
+
+Note that the functions used in this DAG are available in the `include/task` folder
+of the GitHub repository.
+To run this DAG you will need to define the following environment variables (in .env):
+
+ALPHAVANTAGE_KEY=YOUR FREE KEY (https://www.alphavantage.co/support/#api-key)
+AIRFLOW_CONN_WEAVIATE_TEST='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
+    "extra": {"token":"adminkey","X-OpenAI-Api-Key": "YOUR OPEN API KEY"}}'
+OPENAI_API_KEY=YOUR OPEN API KEY
+
+If you choose to embedd locally, the Open API key is only necessary if 
+you want to use the Streamlit app to create inferences based on this data.
+"""
+
 from datetime import datetime
-from weaviate_provider.operators.weaviate import WeaviateCheckSchemaBranchOperator
+from weaviate_provider.operators.weaviate import (
+    WeaviateCheckSchemaBranchOperator,
+    WeaviateCreateSchemaOperator,
+)
 from airflow.providers.slack.notifications.slack_notifier import SlackNotifier
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
@@ -45,7 +68,7 @@ news_sources = [
 
 @dag(
     schedule="@daily",
-    start_date=datetime(2023, 9, 11),
+    start_date=datetime(2023, 10, 18),
     catchup=False,
     default_args=default_args,
 )
@@ -55,18 +78,14 @@ def finbuddy_load_news():
         weaviate_conn_id=WEAVIATE_CONN_ID,
         class_object_data="file://include/data/schema.json",
         follow_task_ids_if_true=["schema_already_exists"],
-        follow_task_ids_if_false=["alert_schema_mismatch"],
+        follow_task_ids_if_false=["create_schema"],
     )
 
-    @task
-    def alert_schema_mismatch(**context):
-        if SLACK_ALERTS:
-            SlackNotifier(
-                slack_conn_id=SLACK_CONNECTION_ID,
-                text=f"{context['dag'].dag_id} DAG failed due to a schema mismatch.",
-                channel=SLACK_CHANNEL,
-            )
-        print("Schema mismatch! Check your schema.json file.")
+    create_schema = WeaviateCreateSchemaOperator(
+        task_id="create_schema",
+        weaviate_conn_id=WEAVIATE_CONN_ID,
+        class_object_data=f"file://include/data/schema.json",
+    )
 
     schema_already_exists = EmptyOperator(task_id="schema_already_exists")
 
@@ -105,6 +124,7 @@ def finbuddy_load_news():
                 weaviate_conn_id=WEAVIATE_CONN_ID,
                 retries=3,
                 retry_delay=30,
+                trigger_rule="all_done",
             ).partial(class_name="NEWS").expand(record=embeddings)
 
         else:
@@ -120,7 +140,7 @@ def finbuddy_load_news():
 
     chain(
         check_schema,
-        [schema_already_exists, alert_schema_mismatch()],
+        [schema_already_exists, create_schema],
         ingest_news_sources,
     )
 

@@ -1,41 +1,48 @@
+"""
+## Ingest pre-computed embeddings of news articles into Weaviate
+
+This DAG ingest pre-computed embeddings of news articles collected from
+Alpha Vantage and Spaceflight News into Weaviate.
+
+To run this DAG you will need to define the following environment variables (in .env):
+
+AIRFLOW_CONN_WEAVIATE_TEST='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
+    "extra": {"token":"adminkey","X-OpenAI-Api-Key": "YOUR OPEN API KEY"}}'
+
+The Open API key is only necessary if you want to use the Streamlit app to 
+create inferences based on this data.
+"""
+
 from datetime import datetime
 import pandas as pd
-from weaviate_provider.hooks.weaviate import WeaviateHook
 from weaviate_provider.operators.weaviate import (
     WeaviateCheckSchemaBranchOperator,
+    WeaviateCreateSchemaOperator,
     WeaviateCreateSchemaOperator,
 )
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 
+# path to pre-computed embeddings
 SEED_BASELINE_URL = "include/pre_computed_embeddings/pre_embedded.parquet"
-WEAVIATE_CONN_ID = "weaviate_test"
 
-# Convenience variable to delete ALL schemas before running this DAG for dev purposes.
-# Set this to true if you want to clean the Weaviate database before running this DAG.
-DELETE_ALL_SCHEMAS = False
+# Provider your Weaviate conn_id here.
+WEAVIATE_CONN_ID = "weaviate_test"
 
 default_args = {
     "retries": 2,
     "owner": "Astronomer",
-    "owner_links": {"Astronomer": "https://astronomer.io/try-astro"},
 }
 
 
 @dag(
     schedule=None,
-    start_date=datetime(2023, 9, 11),
+    start_date=datetime(2023, 10, 18),
     catchup=False,
     default_args=default_args,
 )
 def finbuddy_load_pre_embedded():
-    if DELETE_ALL_SCHEMAS:
-
-        @task
-        def delete_all_weaviate_schemas():
-            WeaviateHook(WEAVIATE_CONN_ID).get_conn().schema.delete_all()
-
     check_schema = WeaviateCheckSchemaBranchOperator(
         task_id="check_schema",
         weaviate_conn_id=WEAVIATE_CONN_ID,
@@ -66,9 +73,6 @@ def finbuddy_load_pre_embedded():
             "uuid_column": "uuid",
             "error_threshold": 10,
         }
-
-    if DELETE_ALL_SCHEMAS:
-        delete_all_weaviate_schemas() >> check_schema
 
     chain(check_schema, [create_schema, schema_already_exists], import_data("NEWS"))
 
