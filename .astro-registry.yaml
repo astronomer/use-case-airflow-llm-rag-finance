@@ -1,0 +1,7 @@
+# These categories will be applied to all DAGs in the repo.
+categories:
+  - AI + Machine Learning
+# List of DAGs that should be published to the Astronomer Registry.
+dags:
+  - path: dags/ingestion/finbuddy_load_news.py
+  - path: dags/ingestion/finbuddy_load_pre_embedded.py
