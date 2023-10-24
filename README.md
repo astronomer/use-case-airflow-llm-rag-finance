@@ -1,7 +1,7 @@
 LLMOps: Automatic retrieval-augmented generation with Airflow, GPT-4 and Weaviate
 =================================================================================
 
-This repository contains the DAG code used in the [LLMOps: Automatic retrieval-augmented generation with Airflow, GPT-4 and Weaviate](https://docs.astronomer.io/learn/use-case-airflow-llm-rag-finance) use case. 
+This repository contains the DAG code used in the [LLMOps: Automatic retrieval-augmented generation with Airflow, GPT-4 and Weaviate](https://docs.astronomer.io/learn/use-case-airflow-llm-rag-finance) use case. The pipeline was modelled after the [Ask Astro reference architecture](https://github.com/astronomer/ask-astro).
 
 The DAGs in this repository use the following tools:
 
