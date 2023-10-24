@@ -23,7 +23,6 @@ from weaviate_provider.operators.weaviate import (
     WeaviateCheckSchemaBranchOperator,
     WeaviateCreateSchemaOperator,
 )
-from airflow.providers.slack.notifications.slack_notifier import SlackNotifier
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
@@ -31,15 +30,10 @@ from include.tasks import extract, scrape, split, embedd_locally, ingest
 
 # Set to True if you want to use compute embeddings locally,
 # False if you want to embed using Weaviate's built-in functionality.
-EMBEDD_LOCALLY = True
+EMBEDD_LOCALLY = False
 
 # Provider your Weaviate conn_id here.
 WEAVIATE_CONN_ID = "weaviate_test"
-
-# Set to True if you want Slack alerts in case of schema mismatch.
-SLACK_ALERTS = True
-SLACK_CONNECTION_ID = "slack_api_default"
-SLACK_CHANNEL = "alerts"
 
 default_args = {
     "retries": 0,
@@ -50,16 +44,16 @@ news_sources = [
     {
         "name": "alphavantage",
         "extract_parameters": {
-            "extract_task_name": extract.extract_alphavantage_api,
-            "start_time": "20231015T2000",
+            "extract_function": extract.extract_alphavantage_api,
+            "start_time": "{{ data_interval_start | ts_nodash }}",
             "limit": 16,
         },
     },
     {
         "name": "spaceflight",
         "extract_parameters": {
-            "extract_task_name": extract.extract_spaceflight_api,
-            "start_time": "20231015T2000",
+            "extract_function": extract.extract_spaceflight_api,
+            "start_time": "{{ data_interval_start | ts_nodash }}",
             "limit": 16,
         },
     },
@@ -84,7 +78,7 @@ def finbuddy_load_news():
     create_schema = WeaviateCreateSchemaOperator(
         task_id="create_schema",
         weaviate_conn_id=WEAVIATE_CONN_ID,
-        class_object_data=f"file://include/data/schema.json",
+        class_object_data="file://include/data/schema.json",
     )
 
     schema_already_exists = EmptyOperator(task_id="schema_already_exists")
@@ -95,7 +89,7 @@ def finbuddy_load_news():
 
     for news_source in news_sources:
         urls = task(
-            news_source["extract_parameters"]["extract_task_name"],
+            news_source["extract_parameters"]["extract_function"],
             task_id=f"extract_{news_source['name']}",
         )(
             news_source["extract_parameters"]["start_time"],

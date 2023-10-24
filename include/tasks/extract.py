@@ -6,6 +6,7 @@ ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 
 
 def extract_alphavantage_api(time_from, limit=50, skip_on_error=False):
+    time_from = time_from[:13]
     url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&apikey={ALPHAVANTAGE_API_KEY}&time_from={time_from}&limit={limit}"
 
     response = requests.get(url)
