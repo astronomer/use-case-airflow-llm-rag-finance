@@ -26,7 +26,7 @@ from weaviate_provider.operators.weaviate import (
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-from include.tasks import extract, scrape, split, embedd_locally, ingest
+from include.tasks import extract, scrape, split, ingest
 
 # Set to True if you want to use compute embeddings locally,
 # False if you want to embed using Weaviate's built-in functionality.
@@ -107,11 +107,6 @@ def finbuddy_load_news():
         )(texts)
 
         if EMBEDD_LOCALLY:
-            embeddings = task(
-                embedd_locally.get_embeddings,
-                task_id=f"get_embeddings_{news_source['name']}",
-            ).expand(record=split_texts)
-
             task.weaviate_import(
                 ingest.import_data_local_embed,
                 task_id=f"weaviate_import_{news_source['name']}",
@@ -119,7 +114,7 @@ def finbuddy_load_news():
                 retries=3,
                 retry_delay=30,
                 trigger_rule="all_done",
-            ).partial(class_name="NEWS").expand(record=embeddings)
+            ).partial(class_name="NEWS").expand(record=split_texts)
 
         else:
             task.weaviate_import(
