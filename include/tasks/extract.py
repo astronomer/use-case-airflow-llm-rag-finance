@@ -76,3 +76,40 @@ def extract_spaceflight_api(published_at_gte, limit=10, skip_on_error=False):
     news_df = pd.DataFrame(news_ingest)
 
     return news_df.to_dict(orient="records")
+
+
+def extract_finance_documents(folder_path):
+    files = [f for f in os.listdir(folder_path) if f.endswith(".md")]
+
+    urls = []
+    titles = []
+    summaries = []
+    news_sites = []
+    published_at = []
+    texts = []
+
+    for file in files:
+        file_path = os.path.join(folder_path, file)
+
+        urls.append(file_path)
+        titles.append(os.path.splitext(file)[0])
+        summaries.append("")
+        news_sites.append("")
+        timestamp = os.path.getmtime(file_path)
+        published_at.append(pd.Timestamp(timestamp, unit="s").strftime('%Y-%m-%dT%H:%M:%SZ'))
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            texts.append(f.read())
+
+    document_df = pd.DataFrame(
+        {
+            "url": urls,
+            "title": titles,
+            "summary": summaries,
+            "news_site": news_sites,
+            "published_at": published_at,
+            "full_text": texts,
+        }
+    )
+
+    return document_df.to_dict(orient="records")
