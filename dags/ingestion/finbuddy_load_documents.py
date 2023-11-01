@@ -25,11 +25,11 @@ from weaviate_provider.operators.weaviate import (
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-from include.tasks import extract, scrape, split, ingest
+from include.tasks import extract, split, ingest
 
 # Set to True if you want to use compute embeddings locally,
 # False if you want to embed using Weaviate's built-in functionality.
-EMBEDD_LOCALLY = True
+EMBEDD_LOCALLY = False
 
 # Provider your Weaviate conn_id here.
 WEAVIATE_CONN_ID = "weaviate_test"
