@@ -2,6 +2,7 @@ import pandas as pd
 import uuid
 from transformers import BertTokenizer, BertModel
 from torch import cuda, no_grad
+from weaviate.util import generate_uuid5
 
 
 def import_data_local_embed(
@@ -42,8 +43,8 @@ def import_data_local_embed(
 
     df = pd.DataFrame(record, index=[0])
 
-    df["uuid"] = df[uuid_source_column].apply(
-        lambda x: str(uuid.uuid5(uuid.NAMESPACE_URL, x))
+    df["uuid"] = df.apply(
+        lambda x: generate_uuid5(identifier=x.to_dict(), namespace=class_name), axis=1
     )
 
     print(f"Passing {len(df)} pre-embedded objects for import.")
@@ -71,8 +72,8 @@ def import_data(
 ):
     df = pd.DataFrame(record, index=[0])
 
-    df["uuid"] = df[uuid_source_column].apply(
-        lambda x: str(uuid.uuid5(uuid.NAMESPACE_URL, x))
+    df["uuid"] = df.apply(
+        lambda x: generate_uuid5(identifier=x.to_dict(), namespace=class_name), axis=1
     )
 
     print(f"Passing {len(df)} objects for embedding and import.")
