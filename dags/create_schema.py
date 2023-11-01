@@ -13,7 +13,7 @@ from weaviate_provider.operators.weaviate import (
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag, task
 
-WEAVIATE_CONN_ID = "weaviate_test"
+WEAVIATE_CONN_ID = "weaviate_default"
 
 # Convenience variable to delete ALL schemas before running this DAG for dev purposes.
 # Set this to true if you want to clean the Weaviate database before running this DAG.

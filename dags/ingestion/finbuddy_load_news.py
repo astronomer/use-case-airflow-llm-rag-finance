@@ -33,7 +33,7 @@ from include.tasks import extract, scrape, split, ingest
 EMBEDD_LOCALLY = False
 
 # Provider your Weaviate conn_id here.
-WEAVIATE_CONN_ID = "weaviate_test"
+WEAVIATE_CONN_ID = "weaviate_default"
 
 default_args = {
     "retries": 0,

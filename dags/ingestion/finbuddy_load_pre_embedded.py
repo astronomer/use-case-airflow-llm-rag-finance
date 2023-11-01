@@ -28,7 +28,7 @@ from airflow.operators.empty import EmptyOperator
 SEED_BASELINE_URL = "include/pre_computed_embeddings/pre_embedded.parquet"
 
 # Provider your Weaviate conn_id here.
-WEAVIATE_CONN_ID = "weaviate_test"
+WEAVIATE_CONN_ID = "weaviate_default"
 
 default_args = {
     "retries": 2,
