@@ -10,7 +10,7 @@ of the GitHub repository.
 To run this DAG you will need to define the following environment variables (in .env):
 
 ALPHAVANTAGE_KEY=YOUR FREE KEY (https://www.alphavantage.co/support/#api-key)
-AIRFLOW_CONN_WEAVIATE_TEST='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
+AIRFLOW_CONN_WEAVIATE_DEFAULT='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
     "extra": {"token":"adminkey","X-OpenAI-Api-Key": "YOUR OPEN API KEY"}}'
 OPENAI_API_KEY=YOUR OPEN API KEY
 

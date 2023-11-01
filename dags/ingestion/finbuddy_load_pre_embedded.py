@@ -6,7 +6,7 @@ Alpha Vantage and Spaceflight News into Weaviate.
 
 To run this DAG you will need to define the following environment variables (in .env):
 
-AIRFLOW_CONN_WEAVIATE_TEST='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
+AIRFLOW_CONN_WEAVIATE_DEFAULT='{"conn_type": "weaviate", "host": "http://weaviate:8081/", 
     "extra": {"token":"adminkey","X-OpenAI-Api-Key": "YOUR OPEN API KEY"}}'
 
 The Open API key is only necessary if you want to use the Streamlit app to 
