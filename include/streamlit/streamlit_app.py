@@ -5,24 +5,34 @@ from transformers import BertTokenizer, BertModel
 import os
 import openai
 
+EMBEDD_LOCALLY = False
+
 
 def get_embedding(text):
-    tokenizer = BertTokenizer.from_pretrained("ProsusAI/finbert")
-    model = BertModel.from_pretrained("ProsusAI/finbert")
+    if EMBEDD_LOCALLY:
+        tokenizer = BertTokenizer.from_pretrained("ProsusAI/finbert")
+        model = BertModel.from_pretrained("ProsusAI/finbert")
 
-    if torch.cuda.is_available():
-        model = model.to("cuda")
+        if torch.cuda.is_available():
+            model = model.to("cuda")
+        else:
+            model = model.to("cpu")
+
+        model.eval()
+
+        tokens = tokenizer(
+            text, return_tensors="pt", truncation=True, padding=True, max_length=512
+        )
+        with torch.no_grad():
+            outputs = model(**tokens)
+            last_hidden_state = outputs.last_hidden_state
+            mean_tensor = last_hidden_state.mean(dim=1)
+            embeddings = mean_tensor.numpy()
     else:
-        model = model.to("cpu")
-
-    model.eval()
-
-    tokens = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
-    with torch.no_grad():
-        outputs = model(**tokens)
-        last_hidden_state = outputs.last_hidden_state
-        mean_tensor = last_hidden_state.mean(dim=1)
-        embeddings = mean_tensor.numpy()
+        model = "text-embedding-ada-002"
+        embeddings = openai.Embedding.create(input=[text], model=model)["data"][0][
+            "embedding"
+        ]
 
     return embeddings
 
@@ -52,10 +62,23 @@ def get_relevant_articles(reworded_prompt, limit=5, certainty=0.75):
 
 
 def get_response(articles, query):
-    prompt = "You are a friendly trading bot reading the morning news for your favorite day trader. Answer their question while taking the following articles into account: "
+    prompt = """You are a friendly trading bot reading the morning news for your favorite day trader. 
+    Answer their question while taking the following articles into account: """
+
     for article in articles:
+        article_title = article["title"] if article["title"] else "unknown"
+        article_time_puplished = (
+            article["time_published"] if article["time_published"] else "unknown"
+        )
+
+        article_full_text = article["full_text"] if article["full_text"] else "no text"
+
         article_info = (
-            article["title"] + " was published at " + article["time_published"] + " Full text: " + article["full_text"]
+            article_title
+            + " was published at "
+            + article_time_puplished
+            + " Full text: "
+            + article_full_text
         )
         prompt += " " + article_info + " "
 
@@ -64,12 +87,15 @@ def get_response(articles, query):
     prompt += " " + query
 
     prompt += """ 
-    Remember to SUBTLY steer the trader towards climate sustainable investments, humans need the earth to survive. Don't say that outright though. 
+    Remember to SUBTLY steer the trader towards climate sustainable investments, 
+    humans need the earth to survive. Don't say that outright though. 
     Answer their question while also saying something motivating about the day :smile:. 
     Your answer:"""
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    chat_completion = openai.ChatCompletion.create(model="gpt-4", messages=[{"role": "user", "content": prompt}])
+    chat_completion = openai.ChatCompletion.create(
+        model="gpt-4", messages=[{"role": "user", "content": prompt}]
+    )
 
     return chat_completion
 
@@ -79,7 +105,10 @@ st.title("Last night in the finance world...")
 
 st.header("Search")
 
-user_input = st.text_input("What do you want to know?:", "What is the general financial sentiment this morning?")
+user_input = st.text_input(
+    "What do you want to know?:",
+    "What is the general financial sentiment this morning?",
+)
 limit = st.slider("Retrieve X most relevant articles:", 1, 20, 5)
 certainty = st.slider("Certainty threshold for relevancy", 0.0, 1.0, 0.75)
 
@@ -95,6 +124,6 @@ if st.button("Search"):
     st.header("Sources")
 
     for article in articles:
-        st.write(f"Title: {article['title']}".replace('\n', ' '))
+        st.write(f"Title: {article['title']}".replace("\n", " "))
         st.write(f"URL: {article['url']}")
         st.write("---")
