@@ -41,9 +41,6 @@ def get_embedding(text):
 
 
 def get_relevant_articles(reworded_prompt, limit=5, certainty=0.75):
-    my_credentials = weaviate.AuthApiKey("adminkey")
-
-    client = weaviate.Client("http://weaviate:8081", auth_client_secret=my_credentials)
 
     client = weaviate.Client(
         url="http://weaviate:8081",
@@ -54,7 +51,6 @@ def get_relevant_articles(reworded_prompt, limit=5, certainty=0.75):
 
     nearVector = get_embedding(input_text)
 
-    # print count of articles in total in NEWS
     count = client.query.get("NEWS", ["full_text"]).do()
     st.write(f"Total articles in NEWS: {len(count['data']['Get']['NEWS'])}")
 

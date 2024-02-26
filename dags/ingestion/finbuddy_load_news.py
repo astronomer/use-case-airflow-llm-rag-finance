@@ -168,7 +168,7 @@ def finbuddy_load_news():
             )
 
             import_data = WeaviateIngestOperator.partial(
-                task_id=f"import_data_local_embed{news_source['name']}",
+                task_id=f"prep_for_ingest_{news_source['name']}",
                 conn_id=WEAVIATE_CONN_ID,
                 class_name=WEAVIATE_CLASS_NAME,
                 vector_col="vectors",
@@ -181,7 +181,7 @@ def finbuddy_load_news():
             embed_obj = (
                 task(
                     ingest.import_data,
-                    task_id=f"embed_objs_{news_source['name']}",
+                    task_id=f"prep_for_ingest_{news_source['name']}",
                 )
                 .partial(
                     class_name=WEAVIATE_CLASS_NAME,
@@ -198,7 +198,7 @@ def finbuddy_load_news():
                 trigger_rule="all_done",
             ).expand(input_data=embed_obj)
 
-        chain(ingest_news_sources, texts, split_texts, embed_obj, import_data)
+        chain(ingest_news_sources, urls, texts, split_texts, embed_obj, import_data)
 
 
 finbuddy_load_news()
