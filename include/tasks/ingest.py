@@ -47,29 +47,18 @@ def import_data_local_embed(
         lambda x: generate_uuid5(identifier=x.to_dict(), namespace=class_name), axis=1
     )
 
-    print(f"Passing {len(df)} pre-embedded objects for import.")
+    print(f"Passing {len(df)} locally embedded objects for import.")
 
-    return {
-        "data": df,
-        "class_name": class_name,
-        "upsert": upsert,
-        "embedding_column": embedding_column,
-        "uuid_column": "uuid",
-        "error_threshold": error_threshold,
-        "verbose": verbose,
-    }
+    return df.to_dict(orient="records")
 
 
 def import_data(
     record,
     class_name: str,
-    upsert=False,
-    uuid_source_column="url",
-    batch_size=1000,
-    error_threshold=0,
-    batched_mode=True,
-    verbose=False,
 ):
+
+    print(record)
+
     df = pd.DataFrame(record, index=[0])
 
     df["uuid"] = df.apply(
@@ -78,13 +67,4 @@ def import_data(
 
     print(f"Passing {len(df)} objects for embedding and import.")
 
-    return {
-        "data": df,
-        "class_name": class_name,
-        "upsert": upsert,
-        "uuid_column": "uuid",
-        "error_threshold": error_threshold,
-        "batched_mode": batched_mode,
-        "batch_size": batch_size,
-        "verbose": verbose,
-    }
+    return df.to_dict(orient="records")

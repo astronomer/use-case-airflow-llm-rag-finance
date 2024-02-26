@@ -19,7 +19,7 @@ services:
       AUTHENTICATION_APIKEY_USERS: 'jane@doe.com,john@doe.com'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
-      ENABLE_MODULES: 'text2vec-openai, backup-filesystem, qna-openai'
+      ENABLE_MODULES: 'text2vec-openai, backup-filesystem, qna-openai, text2vec'
       BACKUP_FILESYSTEM_PATH: '/var/lib/weaviate/backup'
       CLUSTER_HOSTNAME: 'node1'
     networks:

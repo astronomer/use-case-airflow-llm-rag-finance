@@ -6,6 +6,7 @@ import os
 import openai
 
 EMBEDD_LOCALLY = False
+openai.api_key = os.getenv("OPENAI_APIKEY")
 
 
 def get_embedding(text):
@@ -28,6 +29,8 @@ def get_embedding(text):
             last_hidden_state = outputs.last_hidden_state
             mean_tensor = last_hidden_state.mean(dim=1)
             embeddings = mean_tensor.numpy()
+
+        embeddings = embeddings[0].tolist()
     else:
         model = "text-embedding-ada-002"
         embeddings = openai.Embedding.create(input=[text], model=model)["data"][0][
@@ -51,12 +54,25 @@ def get_relevant_articles(reworded_prompt, limit=5, certainty=0.75):
 
     nearVector = get_embedding(input_text)
 
-    result = (
-        client.query.get("NEWS", ["title", "url", "full_text", "time_published"])
-        .with_near_vector({"vector": nearVector, "certainty": certainty})
-        .with_limit(limit)
-        .do()
-    )
+    # print count of articles in total in NEWS
+    count = client.query.get("NEWS", ["full_text"]).do()
+    st.write(f"Total articles in NEWS: {len(count['data']['Get']['NEWS'])}")
+
+    if EMBEDD_LOCALLY:
+        result = (
+            client.query.get("NEWS", ["title", "url", "full_text", "published_at"])
+            .with_near_vector({"vector": nearVector, "certainty": certainty})
+            .with_limit(limit)
+            .do()
+        )
+
+    else:
+        result = (
+            client.query.get("NEWS", ["title", "url", "full_text", "published_at"])
+            .with_near_vector({"vector": nearVector, "certainty": certainty})
+            .with_limit(limit)
+            .do()
+        )
 
     return result["data"]["Get"]["NEWS"]
 
@@ -67,8 +83,8 @@ def get_response(articles, query):
 
     for article in articles:
         article_title = article["title"] if article["title"] else "unknown"
-        article_time_puplished = (
-            article["time_published"] if article["time_published"] else "unknown"
+        article_published_at = (
+            article["published_at"] if article["published_at"] else "unknown"
         )
 
         article_full_text = article["full_text"] if article["full_text"] else "no text"
@@ -76,7 +92,7 @@ def get_response(articles, query):
         article_info = (
             article_title
             + " was published at "
-            + article_time_puplished
+            + article_published_at
             + " Full text: "
             + article_full_text
         )
@@ -92,7 +108,6 @@ def get_response(articles, query):
     Answer their question while also saying something motivating about the day :smile:. 
     Your answer:"""
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
     chat_completion = openai.ChatCompletion.create(
         model="gpt-4", messages=[{"role": "user", "content": prompt}]
     )
