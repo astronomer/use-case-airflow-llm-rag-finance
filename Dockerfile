@@ -1,7 +1,3 @@
-# syntax=quay.io/astronomer/airflow-extensions:latest
-
-FROM quay.io/astronomer/astro-runtime:9.4.0-base
-
-COPY include/airflow_provider_weaviate-0.0.1-py3-none-any.whl /tmp
+FROM quay.io/astronomer/astro-runtime:10.4.0
 
 ENV AIRFLOW__CORE__DAGBAG_IMPORT_TIMEOUT=120

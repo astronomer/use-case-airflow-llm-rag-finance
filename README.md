@@ -5,10 +5,11 @@ This repository contains the DAG code used in the [LLMOps: Automatic retrieval-a
 
 The DAGs in this repository use the following tools:
 
-- Weaviate Airflow provider (beta version available as a [.whl file](https://github.com/astronomer/use-case-airflow-llm-rag-finance/blob/main/include/airflow_provider_weaviate-0.0.1-py3-none-any.whl))
+- [Weaviate Airflow provider](https://registry.astronomer.io/providers/apache-airflow-providers-weaviate/versions/latest)
 - [Streamlit](streamlit.io)
 - [Weaviate](weaviate.io)
 - [FinBERT](https://huggingface.co/ProsusAI/finbert)
+- [OpenAI GPT-4](https://platform.openai.com/docs/api-reference)
 
 # How to use this repository
 
@@ -24,10 +25,12 @@ The following credentials are necessary to use this repository:
 3. Create the `.env` file with the contents from `.env_example.txt` plus your own credentials.
 4. Run `astro dev start` in your cloned repository.
 5. After your Astro project has started. View the Airflow UI at `localhost:8080`, the Weaviate endpoint at `localhost:8081` and the Streamlit app at `localhost:8501`.
-6. In order to fill the local Weaviate instance with data, run the `finbuddy_load_news` DAG to get the latest news articles or the `finbuddy_load_pre_embedded` DAG to load a set of preembeddded articles for quick development.
+6. In order to fill the local Weaviate instance with data, run the `finbuddy_load_news` DAG to get the latest news articles or the `finbuddy_load_pre_embedded` DAG to load a set of preembedded (with ada-200) articles for quick development.
 7. After the DAGrun has completed, ask a question about current financial developments in the Streamlit app at `localhost:8501`.
 
 ![A screenshot of the streamlit application created in this use case with a augmented GPT created answer for the question "What space technology should I invest in today?".](src/assets/streamlit_app.png)
+
+Note that if you switch between using OpenAI and local embeddings you will need to run the `create_schema` DAG to delete the old schema and create a new one because the two models create embeddings of different dimensions.
 
 ## Resources
 
