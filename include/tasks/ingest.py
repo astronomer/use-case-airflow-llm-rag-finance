@@ -5,15 +5,7 @@ from torch import cuda, no_grad
 from weaviate.util import generate_uuid5
 
 
-def import_data_local_embed(
-    record,
-    class_name: str,
-    upsert=False,
-    embedding_column="vector",
-    uuid_source_column="url",
-    error_threshold=0,
-    verbose=False,
-):
+def import_data_local_embed(record, class_name: str):
     print("Embedding locally.")
     text = record["full_text"]
     tokenizer = BertTokenizer.from_pretrained("ProsusAI/finbert")
@@ -56,8 +48,6 @@ def import_data(
     record,
     class_name: str,
 ):
-
-    print(record)
 
     df = pd.DataFrame(record, index=[0])
 

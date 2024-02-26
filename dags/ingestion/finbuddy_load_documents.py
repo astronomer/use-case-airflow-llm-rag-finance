@@ -167,7 +167,7 @@ def finbuddy_load_documents():
             embed_obj = (
                 task(
                     ingest.import_data,
-                    task_id=f"embed_objs_{document_source['name']}",
+                    task_id=f"prepare_data_{document_source['name']}",
                 )
                 .partial(
                     class_name=WEAVIATE_CLASS_NAME,
